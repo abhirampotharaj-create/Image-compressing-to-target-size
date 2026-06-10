@@ -1,0 +1,50 @@
+```python
+import os
+import ffmpeg
+
+def compress_video(input_path, output_path, target_crf=23):
+    """
+    Compresses an MP4 video using H.264 codec.
+    
+    Parameters:
+    - input_path: Path to the original heavy mobile video.
+    - output_path: Path where the compressed video will be saved.
+    - target_crf: Constant Rate Factor (18-28). Lower means better quality but larger file.
+                  23 is the default sweet spot for mobile videos.
+    """
+    if not os.path.exists(input_path):
+        print(f"Error: The file '{input_path}' does not exist.")
+        return
+
+    print(" Compression started... This might take a few minutes depending on the video size.")
+    
+    try:
+        (
+            ffmpeg
+            .input(input_path)
+            .output(
+                output_path, 
+                vcodec='libx264',    # Widely compatible H.264 codec
+                crf=target_crf,       # Controls quality/size balance
+                acodec='aac',         # Compresses audio efficiently
+                preset='medium',      # 'fast' is quicker, 'slow' compresses slightly better
+                map_metadata=0        # Copies global metadata (helps preserve video rotation)
+            )
+            .overwrite_output()
+            .run(capture_stdout=True, capture_stderr=True) # Automatically detects system FFmpeg
+        )
+        
+        # Calculate size difference
+        orig_size = os.path.getsize(input_path) / (1024 * 1024)
+        comp_size = os.path.getsize(output_path) / (1024 * 1024)
+        
+        print(f"Original Size: {orig_size:.2f} MB")
+        print(f"Compressed Size: {comp_size:.2f} MB")
+        print(f"Space Saved: {((orig_size - comp_size) / orig_size) * 100:.1f}%")
+
+
+if __name__ == "__main__":
+    # Example usage
+    input_video = "input.mp4"  
+    output_video = "compressed_video.mp4"  # Desired output
+    compress_video(input_video, output_video)
